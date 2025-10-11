@@ -8,10 +8,43 @@ function TodoList({ initialTodos }) {
   const titleRef = useRef("")
   const descriptionRef = useRef("")
   const [todos, setTodos] = useState(initialTodos)
+  const [showEditBox, setShowEditBox] = useState(false)
+  const [editTitle, setEditTitle] = useState("")
+  const [editDescription, setEditDescription] = useState("")
+  const editTitleRef = useRef("")
+  const editDescriptionRef = useRef("")
+  const [editId, setEditId] = useState(null)
 
   async function fetchTodos() {
     const { data, error } = await supabase.from("todo").select()
     setTodos(data)
+  }
+
+  async function editCancelButton() {
+    setEditId(null)
+    setEditTitle("")
+    setEditDescription("")
+    setShowEditBox(false)
+  }
+
+  async function editSaveButton() {
+    const { data, error } = await supabase
+      .from("todo")
+      .update({ title: editTitleRef.current.value,
+        description: editDescriptionRef.current.value
+       })
+      .eq("id", editId)
+    console.log("Updated todo:", data)
+    editCancelButton()
+    fetchTodos()
+    // console.log(editId, editTitleRef.current.value, editDescriptionRef.current.value)
+  }
+
+  async function setEditParams(id, title, description) {
+    setEditId(id)
+    setEditTitle(title)
+    setEditDescription(description)
+    setShowEditBox(true)
   }
 
   async function completeButton(id, completed) {
@@ -69,6 +102,29 @@ function TodoList({ initialTodos }) {
         >
           Add
         </button>
+        {showEditBox && (
+          <div id="edit">
+            <input
+              className="mb-4"
+              type="text"
+              defaultValue={editTitle}
+              ref={editTitleRef}
+            />
+            <br />
+            <textarea
+              defaultValue={editDescription}
+              ref={editDescriptionRef}
+            ></textarea>
+            <br />
+            <button className="rounded bg-green-500 mr-3" onClick={()=>editSaveButton()}>Save</button>
+            <button
+              className="rounded bg-red-500 ml-3"
+              onClick={() => editCancelButton()}
+            >
+              Cancel
+            </button>
+          </div>
+        )}
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-6 gap-9 px-3 py-3 border border-4">
         {todos.map(todo => (
@@ -97,6 +153,14 @@ function TodoList({ initialTodos }) {
               onClick={() => deleteButton(todo.id)}
             >
               Delete
+            </button>
+            <br />
+            <button className="rounded bg-gray-500"
+              onClick={() =>
+                setEditParams(todo.id, todo.title, todo.description)
+              }
+            >
+              Edit
             </button>
           </div>
         ))}
