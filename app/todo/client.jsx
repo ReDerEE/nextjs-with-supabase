@@ -1,13 +1,17 @@
 "use client"
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "../../lib/supabase/client"
 import { useRef, useState } from "react"
 
-const supabase = await createClient()
+async function initSupabase() {
+  const supabase = await createClient()
+}
+
+initSupabase()
 
 function TodoList({ initialTodos }) {
   const titleRef = useRef("")
   const descriptionRef = useRef("")
-  const [todos, setTodos] = useState(initialTodos)
+  const [todos, setTodos] = useState(initialTodos ?? [])
   const [showEditBox, setShowEditBox] = useState(false)
   const [editTitle, setEditTitle] = useState("")
   const [editDescription, setEditDescription] = useState("")
@@ -30,9 +34,10 @@ function TodoList({ initialTodos }) {
   async function editSaveButton() {
     const { data, error } = await supabase
       .from("todo")
-      .update({ title: editTitleRef.current.value,
-        description: editDescriptionRef.current.value
-       })
+      .update({
+        title: editTitleRef.current.value,
+        description: editDescriptionRef.current.value,
+      })
       .eq("id", editId)
     console.log("Updated todo:", data)
     editCancelButton()
@@ -116,7 +121,12 @@ function TodoList({ initialTodos }) {
               ref={editDescriptionRef}
             ></textarea>
             <br />
-            <button className="rounded bg-green-500 mr-3" onClick={()=>editSaveButton()}>Save</button>
+            <button
+              className="rounded bg-green-500 mr-3"
+              onClick={() => editSaveButton()}
+            >
+              Save
+            </button>
             <button
               className="rounded bg-red-500 ml-3"
               onClick={() => editCancelButton()}
@@ -129,15 +139,28 @@ function TodoList({ initialTodos }) {
       <div className="grid grid-cols-1 xl:grid-cols-6 gap-9 px-3 py-3 border border-4">
         {todos.map(todo => (
           <div
+            id={todo.id}
             key={todo.id}
             className={
               "bg-white dark:bg-gray-800 rounded-lg px-6 py-8 ring shadow-xl ring-gray-900/5"
             }
           >
-            <div className="font-bold">{todo.title}</div>
-            <div className="text-wrap">{todo.description}</div>
+            <div
+              data-testid="userTodo"
+              id="todoTitle"
+              className="font-bold"
+            >
+              {todo.title}
+            </div>
+            <div
+              id="todoDescription"
+              className="text-wrap"
+            >
+              {todo.description}
+            </div>
             <br />
             <button
+            data-testid="completeButton"
               className={
                 todo.completed
                   ? "bg-sky-500 hover:bg-sky-700 rounded"
@@ -149,13 +172,16 @@ function TodoList({ initialTodos }) {
             </button>
             <br />
             <button
+            data-testid="deleteButton"
               className="bg-red-500 hover:bg-red-700 rounded"
               onClick={() => deleteButton(todo.id)}
             >
               Delete
             </button>
             <br />
-            <button className="rounded bg-gray-500"
+            <button
+            data-testid="editButton"
+              className="rounded bg-gray-500"
               onClick={() =>
                 setEditParams(todo.id, todo.title, todo.description)
               }
