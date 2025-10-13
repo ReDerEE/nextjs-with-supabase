@@ -4,83 +4,87 @@ import { useRef, useState } from "react"
 
 const supabase = await createClient()
 
-function TodoList({ initialTodos }) {
+async function initSupabase() {
+  const supabase = await createClient()
+}
+
+// initSupabase()
+
+function Books({ initialBooks }) {
   const titleRef = useRef("")
-  const descriptionRef = useRef("")
-  const [todos, setTodos] = useState(initialTodos ?? [])
+  const summaryRef = useRef("")
+  const authorRef = useRef("")
+  const [books, setBooks] = useState(initialBooks ?? [])
   const [showEditBox, setShowEditBox] = useState(false)
   const [editTitle, setEditTitle] = useState("")
-  const [editDescription, setEditDescription] = useState("")
+  const [editSummary, setEditSummary] = useState("")
+  const [editAuthor, setEditAuthor] = useState("")
   const editTitleRef = useRef("")
-  const editDescriptionRef = useRef("")
+  const editSummaryRef = useRef("")
+  const editAuthorRef = useRef("")
   const [editId, setEditId] = useState(null)
 
-  async function fetchTodos() {
-    const { data, error } = await supabase.from("todo").select()
-    setTodos(data)
+  async function fetchBooks() {
+    const { data, error } = await supabase.from("books").select()
+    setBooks(data)
   }
 
   async function editCancelButton() {
     setEditId(null)
     setEditTitle("")
-    setEditDescription("")
+    setEditSummary("")
+    setEditAuthor("")
     setShowEditBox(false)
   }
 
   async function editSaveButton() {
     const { data, error } = await supabase
-      .from("todo")
+      .from("books")
       .update({
         title: editTitleRef.current.value,
-        description: editDescriptionRef.current.value,
+        summary: editSummaryRef.current.value,
+        author: editAuthorRef.current.value,
       })
       .eq("id", editId)
-    console.log("Updated todo:", data)
+    console.log("Updated book:", data)
     editCancelButton()
-    fetchTodos()
-    // console.log(editId, editTitleRef.current.value, editDescriptionRef.current.value)
+    fetchBooks()
+    // console.log(editId, editTitleRef.current.value, editSummaryRef.current.value)
   }
 
-  async function setEditParams(id, title, description) {
+  async function setEditParams(id, title, summary, author) {
     setEditId(id)
     setEditTitle(title)
-    setEditDescription(description)
+    setEditSummary(summary)
+    setEditAuthor(author)
     setShowEditBox(true)
   }
 
-  async function completeButton(id, completed) {
-    const { data, error } = await supabase
-      .from("todo")
-      .update({ completed: !completed })
-      .eq("id", id)
-    console.log("Updated todo:", data)
-    fetchTodos()
-  }
-
   async function deleteButton(id) {
-    const response = await supabase.from("todo").delete().eq("id", id)
-    console.log("Deleted todo:", id)
+    const response = await supabase.from("books").delete().eq("id", id)
+    console.log("Deleted book:", id)
     console.log(response)
-    fetchTodos()
+    fetchBooks()
   }
 
-  async function addTodoButton(title, description) {
-    console.log(title, description)
+  async function addBookButton(title, summary, author) {
+    console.log(title, summary)
     const { data, error } = await supabase
-      .from("todo")
-      .insert([{ title: title, description: description }])
+      .from("books")
+      .insert([{ title: title, summary: summary, author: author }])
       .select()
     titleRef.current.value = ""
-    descriptionRef.current.value = ""
-    fetchTodos()
+    summaryRef.current.value = ""
+    authorRef.current.value = ""
+    fetchBooks()
   }
 
-  console.log(todos)
+  console.log(books)
   return (
     <>
       <div className="box">
         <input
-          ref={titleRef}  
+          ref={titleRef}
           placeholder="Title"
           type="text"
           className="rounded-lg"
@@ -89,15 +93,28 @@ function TodoList({ initialTodos }) {
       <br />
       <div>
         <input
-          ref={descriptionRef}
-          placeholder="Description"
+          type="text"
+          placeholder="Author"
+          ref={authorRef}
+          className="rounded-lg"
+        />
+      </div>
+      <br />
+      <div>
+        <input
+          ref={summaryRef}
+          placeholder="Summary"
           type="text"
           className="rounded-lg"
         />
         <br />
         <button
           onClick={() =>
-            addTodoButton(titleRef.current.value, descriptionRef.current.value)
+            addBookButton(
+              titleRef.current.value,
+              summaryRef.current.value,
+              authorRef.current.value,
+            )
           }
           className="bg-purple-700 rounded-lg p-1 mt-2"
         >
@@ -112,9 +129,16 @@ function TodoList({ initialTodos }) {
               ref={editTitleRef}
             />
             <br />
+            <input
+              type="text"
+              ref={editAuthorRef}
+              defaultValue={editAuthor}
+              className="mb-4"
+            />
+            <br />
             <textarea
-              defaultValue={editDescription}
-              ref={editDescriptionRef}
+              defaultValue={editSummary}
+              ref={editSummaryRef}
             ></textarea>
             <br />
             <button
@@ -133,44 +157,38 @@ function TodoList({ initialTodos }) {
         )}
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-6 gap-9 px-3 py-3 border border-4">
-        {todos.map(todo => (
+        {books.map(book => (
           <div
-            id={todo.id}
-            key={todo.id}
+            id={book.id}
+            key={book.id}
             className={
               "bg-white dark:bg-gray-800 rounded-lg px-6 py-8 ring shadow-xl ring-gray-900/5"
             }
           >
             <div
-              data-testid="userTodo"
-              id="todoTitle"
+              data-testid="userBook"
+              id="bookTitle"
               className="font-bold"
             >
-              {todo.title}
+              {book.title}
             </div>
             <div
-              id="todoDescription"
+              id="bookAuthor"
+              className="italic underline"
+            >
+              {book.author}
+            </div>
+            <div
+              id="bookSummary"
               className="text-wrap"
             >
-              {todo.description}
+              {book.summary}
             </div>
-            <br />
-            <button
-              data-testid="completeButton"
-              className={
-                todo.completed
-                  ? "bg-sky-500 hover:bg-sky-700 rounded"
-                  : "bg-gray-500 hover:bg-gray-700 rounded"
-              }
-              onClick={() => completeButton(todo.id, todo.completed)}
-            >
-              {todo.completed ? "Completed" : "Done?"}
-            </button>
             <br />
             <button
               data-testid="deleteButton"
               className="bg-red-500 hover:bg-red-700 rounded"
-              onClick={() => deleteButton(todo.id)}
+              onClick={() => deleteButton(book.id)}
             >
               Delete
             </button>
@@ -179,7 +197,7 @@ function TodoList({ initialTodos }) {
               data-testid="editButton"
               className="rounded bg-gray-500"
               onClick={() =>
-                setEditParams(todo.id, todo.title, todo.description)
+                setEditParams(book.id, book.title, book.summary, book.author)
               }
             >
               Edit
@@ -191,4 +209,4 @@ function TodoList({ initialTodos }) {
   )
 }
 
-export default TodoList
+export default Books
